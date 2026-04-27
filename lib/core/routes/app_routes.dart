@@ -4,6 +4,7 @@ import '../../presentation/views/account_create_view.dart';
 import '../../presentation/views/characters_view.dart';
 import '../../presentation/views/home_view.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
 
 /// Route names for easier referencing
 class AppRouteNames {
@@ -11,6 +12,7 @@ class AppRouteNames {
   static const about = 'about';
   static const accountCreate = 'account_create';
   static const characters = 'characters';
+  static const editCharacter = 'edit_character';
 }
 
 /// Paths to keep URL structure consistent
@@ -19,6 +21,7 @@ class AppPaths {
   static const about = '/about';
   static const accountCreate = '/account-create';
   static const characters = '/characters';
+  static const editCharacter = '/edit/:id';
 }
 
 /// app routers using go_router
@@ -53,6 +56,19 @@ class AppRouter {
         name: AppRouteNames.about,
         pageBuilder: (context, state) =>
             const NoTransitionPage(child: AboutView()),
+      ),
+      GoRoute(
+        path: AppPaths.editCharacter,
+        name: AppRouteNames.editCharacter,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id']!; // Captura o ID da URL
+          return NoTransitionPage(
+            child: Scaffold(
+              appBar: AppBar(title: const Text('Editando')),
+              body: Center(child: Text('Editando o personagem ID: $id')),
+            ),
+          );
+        },
       ),
     ],
   );

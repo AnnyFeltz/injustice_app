@@ -4,6 +4,7 @@ import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart' as AppTheme;
 import 'core/theme/theme_controller.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
