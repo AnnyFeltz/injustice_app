@@ -9,22 +9,23 @@ class CharactersCommandsViewModel {
   final CharactersStateViewmodel state;
   final GetAllCharactersCommand _getAccountCommand;
   final CreateCharacterCommand _createCharacterCommand;
-  final DeleteCharacterCommand _deleteCharacterCommand; 
-  
-  // Variável para guardar o id que estamos tentando deletar
-  String? _deletedCharacterId;
+  final UpdateCharacterCommand _updateCharacterCommand; 
+  final DeleteCharacterCommand _deleteCharacterCommand;
 
   CharactersCommandsViewModel({
     required this.state,
     required GetAllCharactersCommand getAccountCommand,
     required CreateCharacterCommand createCharacterCommand,
+    required UpdateCharacterCommand updateCharacterCommand, 
     required DeleteCharacterCommand deleteCharacterCommand,
-  })  : _getAccountCommand = getAccountCommand,
-        _createCharacterCommand = createCharacterCommand,
-        _deleteCharacterCommand = deleteCharacterCommand {
+  }) : _getAccountCommand = getAccountCommand,
+       _createCharacterCommand = createCharacterCommand,
+       _updateCharacterCommand = updateCharacterCommand,
+       _deleteCharacterCommand = deleteCharacterCommand { 
     // Observers para cada comando
     _observeGetAllCharacters();
     _observeCreateCharacter();
+    _observeUpdateCharacter();
     _observeDeleteCharacter(); 
   }
 
@@ -33,6 +34,7 @@ class CharactersCommandsViewModel {
   // ========================================================
   GetAllCharactersCommand get getAllCharactersCommand => _getAccountCommand;
   CreateCharacterCommand get createCharacterCommand => _createCharacterCommand;
+  UpdateCharacterCommand get updateCharacterCommand => _updateCharacterCommand;
   DeleteCharacterCommand get deleteCharacterCommand => _deleteCharacterCommand;
 
   // ========================================================
@@ -71,68 +73,83 @@ class CharactersCommandsViewModel {
   //   OBSERVERS ESPECÍFICOS
   // ========================================================
 
+  /// Buscar todos os personagens
   void _observeGetAllCharacters() {
     _observeCommand<List<Character>>(
       _getAccountCommand,
       onSuccess: (characters) {
-        state.clearMessage(); 
+        state.clearMessage(); // Limpa mensagens anteriores
         state.state.value = characters;
       },
       onFailure: (err) =>
-          state.setMessage(err.msg), 
+          state.setMessage(err.msg), // registra o erro no estado
     );
   }
 
+  /// Criar um novo personagem
   void _observeCreateCharacter() {  
     _observeCommand<Character>(
       _createCharacterCommand,
       onSuccess: (newCharacter) {
         final currentList = state.state.value;
-        state.state.value = [...currentList, newCharacter]; 
+        final newlist = [...currentList, newCharacter]; // Adiciona o novo personagem à lista
+        state.state.value = newlist; 
       },
       onFailure: (err) =>
-          state.setMessage(err.msg), 
+          state.setMessage(err.msg), // registra o erro no estado
     );
   }
-  
+
+  /// Atualiza um personagem
+  void _observeUpdateCharacter() {  
+    _observeCommand<Character>(
+      _updateCharacterCommand,
+      onSuccess: (updatedCharacter) {
+        final currentList = state.state.value;
+        // Substitui o item antigo pelo atualizado
+        final newlist = currentList
+            .map((c) => c.id == updatedCharacter.id ? updatedCharacter : c)
+            .toList();
+        state.state.value = newlist; 
+      },
+      onFailure: (err) =>
+          state.setMessage(err.msg), // registra o erro no estado
+    );
+  }
+
+  /// Deleta um personagem
   void _observeDeleteCharacter() {
-    _observeCommand<dynamic>(
+    _observeCommand<Character>(
       _deleteCharacterCommand,
-      onSuccess: (_) {
-        if (_deletedCharacterId != null) {
-          // Atualização otimizada da tela: remove da lista local
-          final currentList = List<Character>.from(state.state.value);
-          currentList.removeWhere((char) => char.id == _deletedCharacterId);
-          state.state.value = currentList;
-          _deletedCharacterId = null;
-        } else {
-          fetchCharacters();
-        }
+      onSuccess: (deletedCharacter) {
+        final currentList = state.state.value;
+        final newList = currentList.where((c) => c.id != deletedCharacter.id).toList();
+        state.state.value = newList; 
       },
-      onFailure: (err) {
-        _deletedCharacterId = null;
-        state.setMessage(err.msg);
-      },
+      onFailure: (err) => state.setMessage(err.msg),
     );
   }
 
   // ========================================================
   //   MÉTODOS PÚBLICOS (CHAMADOS PELOS WIDGETS)
   // ========================================================
-  
   Future<void> fetchCharacters() async {
-    state.clearMessage(); 
+    state.clearMessage(); // Limpa mensagens anteriores
     await _getAccountCommand.executeWith(());
   }
 
   Future<void> addCharacter(Character character) async {
-    state.clearMessage(); 
+    state.clearMessage(); // Limpa mensagens anteriores
     await _createCharacterCommand.executeWith((character: character));
   }
 
-  Future<void> deleteCharacter(String id) async {
-    state.clearMessage(); 
-    _deletedCharacterId = id; // Marca qual ID estamos deletando
-    await _deleteCharacterCommand.executeWith((id: id)); 
+  Future<void> updateCharacter(Character character) async {
+    state.clearMessage(); // Limpa mensagens anteriores
+    await _updateCharacterCommand.executeWith((character: character));
+  }
+
+  Future<void> deleteCharacter(Character character) async {
+    state.clearMessage(); // Limpa mensagens anteriores
+    await _deleteCharacterCommand.executeWith((id: character.id));
   }
 }

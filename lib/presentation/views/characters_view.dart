@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart'; // Adicionado pacote slidable
 import '../../core/di/dependency_injection.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/account_entity.dart';
@@ -36,14 +35,18 @@ class _CharactersViewState extends State<CharactersView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _viewModel.commands.fetchCharacters();
     });
+    // _viewModel.loadCharacters();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // _viewModel.refresh();
   }
 
   Future<void> _deleteCharacter(Character character) async {
+    // await _viewModel.deleteCharacter(character.id);
+
     if (mounted) {
       ScaffoldMessenger.of(
         context,
@@ -57,6 +60,7 @@ class _CharactersViewState extends State<CharactersView> {
       appBar: AppBar(
         title: const Text('Personagens'),
         actions: [
+          // Botão de direção da ordenação
           Watch((context) {
             final order = _viewModel.charactersState.sortOrder.value;
             return IconButton(
@@ -68,9 +72,11 @@ class _CharactersViewState extends State<CharactersView> {
               tooltip: order == SortOrder.ascending
                   ? 'Ascendente'
                   : 'Descendente',
+              // onPressed: () {},
               onPressed: _viewModel.charactersState.toggleSortOrder,
             );
           }),
+          // Botão de ordenação
           Watch((context) {
             final currentSort = _viewModel.charactersState.sortBy.value;
             return PopupMenuButton<SortBy>(
@@ -86,14 +92,16 @@ class _CharactersViewState extends State<CharactersView> {
                         Icons.sort_by_alpha,
                         color: currentSort == SortBy.name
                             ? Colors.amber
+                            // ? Theme.of(context).colorScheme.secondary
                             : null,
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Text(
                         'Nome',
                         style: currentSort == SortBy.name
-                            ? const TextStyle(
+                            ? TextStyle(
                                 color: Colors.amber,
+                                // color: Theme.of(context).colorScheme.secondary,
                                 fontWeight: FontWeight.bold,
                               )
                             : null,
@@ -115,7 +123,7 @@ class _CharactersViewState extends State<CharactersView> {
                       Text(
                         'Level',
                         style: currentSort == SortBy.level
-                            ? const TextStyle(
+                            ? TextStyle(
                                 color: Colors.amber,
                                 fontWeight: FontWeight.bold,
                               )
@@ -138,7 +146,7 @@ class _CharactersViewState extends State<CharactersView> {
                       Text(
                         'Estrelas',
                         style: currentSort == SortBy.stars
-                            ? const TextStyle(
+                            ? TextStyle(
                                 color: Colors.amber,
                                 fontWeight: FontWeight.bold,
                               )
@@ -152,6 +160,7 @@ class _CharactersViewState extends State<CharactersView> {
           }),
         ],
       ),
+
       drawer: AppDrawer(),
       body: Column(
         children: [
@@ -164,6 +173,8 @@ class _CharactersViewState extends State<CharactersView> {
             child: Watch((context) {
               final isLoading =
                   _viewModel.commands.getAllCharactersCommand.isExecuting.value;
+              // final isLoading = false;
+              // final characters = CharacterFactory.list(10);
 
               if (isLoading) {
                 return LoadingIndicator(message: 'Carregando personagens...');
@@ -172,11 +183,13 @@ class _CharactersViewState extends State<CharactersView> {
               final characters = _viewModel.charactersState.state.value;
 
               if (characters.isEmpty) {
-                return const EmptyState();
+                return EmptyState();
               }
 
               return RefreshIndicator(
-                onRefresh: () async {},
+                onRefresh: () async {
+                  // await _viewModel.refresh();
+                },
                 child: ListView.builder(
                   padding: AppSpacing.paddingMd,
                   itemCount: characters.length,
@@ -185,9 +198,10 @@ class _CharactersViewState extends State<CharactersView> {
                     return CharacterListItem(
                       character: character,
                       onDelete: () => _deleteCharacter(character),
-                      onTap: () {
-                        // Ação de editar (pode ser chamada com duplo clique ou pelo botão)
-                      },
+                      onTap: () {},
+                      // onTap: () => context.push(
+                      //   AppRoutes.editarPersonagemComId(character.id),
+                      // ),
                     );
                   },
                 ),
@@ -235,6 +249,8 @@ class EmptyState extends StatelessWidget {
           vertical: AppSpacing.xxl,
         ),
         child: Column(
+          // mainAxisSize: MainAxisSize.max,
+          // mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Icon(
               Icons.people_outline,
@@ -277,133 +293,124 @@ class CharacterListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      // Adicionamos o padding aqui para substituir a margem do card
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Slidable(
-        key: Key(character.id),
-        // Painel esquerdo (arrastando da esquerda para a direita)
-        startActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (context) {
-                onTap(); // Ação de editar
-              },
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              borderRadius: BorderRadius.circular(AppRadius.md), // Altura e cantos ajustados
-              icon: Icons.edit,
-              label: 'Editar',
-            ),
-          ],
+    return Dismissible(
+      key: Key(character.id),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.blue,
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        // Painel direito (arrastando da direita para a esquerda)
-        endActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (context) async {
-                // Confirmação antes de excluir
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Confirmar exclusão'),
-                    content: Text('Deseja realmente excluir ${character.name}?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancelar'),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: AppSpacing.lg),
+        child: const Icon(Icons.edit, color: Colors.white),
+      ),
+      secondaryBackground: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onTap();
+          return false;
+        } else {
+          return await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirmar exclusão'),
+                  content: Text('Deseja realmente excluir ${character.name}?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Excluir'),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
+        }
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
+          onDelete();
+        }
+      },
+      child: Card(
+        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.9),
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Padding(
+            padding: AppSpacing.paddingMd,
+            child: Row(
+              children: [
+                // Indicador de raridade
+                Container(
+                  width: 4,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: character.rarity.color,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                // Conteúdo principal
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              character.name,
+                              style: context.textStyles.titleMedium?.semiBold,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            'Nv. ${character.level}',
+                            style: context.textStyles.labelLarge?.withColor(
+                              Theme.of(context).colorScheme.onSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Excluir'),
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          Icon(
+                            character.characterClass.icon,
+                            size: 16,
+                            color: character.characterClass.color,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            character.characterClass.displayName,
+                            style: context.textStyles.bodySmall?.withColor(
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: AppSpacing.xs),
+                      StarRating(stars: character.stars, size: 14),
                     ],
                   ),
-                ) ?? false;
-
-                if (confirm) {
-                  onDelete();
-                }
-              },
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              icon: Icons.delete,
-              label: 'Excluir',
-            ),
-          ],
-        ),
-        child: Card(
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.9),
-          // Zera a margem do card, pois agora está no Padding do Slidable
-          margin: EdgeInsets.zero, 
-          child: InkWell(
-            onTap: () {}, // Deixa o clique simples inativo, permitindo arrastar sem ativar sem querer
-            onDoubleTap: onTap, // 2 cliques para editar
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: Padding(
-              padding: AppSpacing.paddingMd,
-              child: Row(
-                children: [
-                  // Indicador de raridade
-                  Container(
-                    width: 4,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: character.rarity.color,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  // Conteúdo principal
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                character.name,
-                                style: context.textStyles.titleMedium?.semiBold,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              'Nv. ${character.level}',
-                              style: context.textStyles.labelLarge?.withColor(
-                                Theme.of(context).colorScheme.onSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Row(
-                          children: [
-                            Icon(
-                              character.characterClass.icon,
-                              size: 16,
-                              color: character.characterClass.color,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              character.characterClass.displayName,
-                              style: context.textStyles.bodySmall?.withColor(
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        StarRating(stars: character.stars, size: 14),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -426,7 +433,7 @@ class FilterPanel extends StatelessWidget {
       final isExpanded = state.isFilterPanelExpanded.value;
 
       return Container(
-        margin: const EdgeInsets.only(
+        margin: EdgeInsets.only(
           left: AppSpacing.md,
           right: AppSpacing.md,
           bottom: AppSpacing.md,
@@ -442,6 +449,7 @@ class FilterPanel extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(AppRadius.md),
+          color: Theme.of(context).colorScheme.secondary,
           border: Border(
             bottom: BorderSide(
               color: Theme.of(context).colorScheme.outlineVariant,
@@ -451,6 +459,7 @@ class FilterPanel extends StatelessWidget {
         ),
         child: Column(
           children: [
+            // Cabeçalho do painel
             InkWell(
               onTap: state.toggleFilterPanel,
               child: Padding(
@@ -468,8 +477,10 @@ class FilterPanel extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+
                     if (filtersCount > 0) ...[
                       const SizedBox(width: 6),
+
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -489,15 +500,18 @@ class FilterPanel extends StatelessWidget {
                         ),
                       ),
                     ],
+
                     const Spacer(),
+
                     if (filtersCount > 0)
                       TextButton.icon(
                         onPressed: state.clearFilters,
                         icon: const Icon(Icons.clear, size: 16),
                         label: const Text('Limpar'),
                         style: TextButton.styleFrom(
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onSecondary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSecondary,
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
@@ -515,11 +529,13 @@ class FilterPanel extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Conteúdo do painel (expansível)
             if (isExpanded)
+              // if (_isExpanded)
               SizedBox(
                 width: double.infinity,
-                child: _FiltersContent(state: state),
-              ),
+                child: _FiltersContent(state: state)),
           ],
         ),
       );
@@ -548,6 +564,7 @@ class _FiltersContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Filtro de Raridade
                 Text(
                   'Raridade',
                   style: context.textStyles.labelLarge?.semiBold,
@@ -557,8 +574,15 @@ class _FiltersContent extends StatelessWidget {
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
                   children: CharacterRarity.values.map((rarity) {
-                    final isSelected =
-                        state.selectedRarities.value.contains(rarity);
+                    // final isSelected = widget
+                    //     .viewModel
+                    //     .selectedRarities
+                    //     .value
+                    //     .contains(rarity);
+                    // final isSelected = false;
+                    final isSelected = state.selectedRarities.value.contains(
+                      rarity,
+                    );
 
                     return FilterChip(
                       label: Text(
@@ -567,10 +591,15 @@ class _FiltersContent extends StatelessWidget {
                       ),
                       selected: isSelected,
                       onSelected: (_) => state.toggleRarity(rarity),
+                      // onSelected: (_) {},
+                      // onSelected: (_) =>
+                      //     widget.viewModel.toggleRarityFilter(rarity),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: AppSpacing.md),
+
+                // Filtro de Classe
                 Text('Classe', style: context.textStyles.labelLarge?.semiBold),
                 const SizedBox(height: AppSpacing.xs),
                 Wrap(
@@ -578,8 +607,15 @@ class _FiltersContent extends StatelessWidget {
                   runSpacing: AppSpacing.xs,
                   alignment: WrapAlignment.start,
                   children: CharacterClass.values.map((characterClass) {
-                    final isSelected =
-                        state.selectedClasses.value.contains(characterClass);
+                    // final isSelected = widget
+                    //     .viewModel
+                    //     .selectedClasses
+                    //     .value
+                    //     .contains(characterClass);
+                    // final isSelected = false;
+                    final isSelected = state.selectedClasses.value.contains(
+                      characterClass,
+                    );
                     return FilterChip(
                       label: Text(
                         characterClass.displayName,
@@ -587,10 +623,16 @@ class _FiltersContent extends StatelessWidget {
                       ),
                       selected: isSelected,
                       onSelected: (_) => state.toggleClass(characterClass),
+                      // onSelected: (_) {},
+                      // onSelected: (_) => widget.viewModel.toggleClassFilter(
+                      //   characterClass,
+                      // ),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: AppSpacing.md),
+
+                // Filtro de Level
                 Text('Level', style: context.textStyles.labelLarge?.semiBold),
                 const SizedBox(height: AppSpacing.xs),
                 Wrap(
@@ -609,6 +651,116 @@ class _FiltersContent extends StatelessWidget {
                     );
                   }).toList(),
                 ),
+                // Wrap(
+                //   spacing: AppSpacing.xs,
+                //   runSpacing: AppSpacing.xs,
+                //   children: [
+                //     FilterChip(
+                //       label: Text(
+                //         'Todos',
+                //         style: TextStyle(
+                //           color: Theme.of(context).colorScheme.onSecondary,
+                //         ),
+                //       ),
+                //       // selected:
+                //       //     widget.viewModel.levelFilter.value ==
+                //       //     LevelFilter.all,
+                //       // selected: false,
+                //       selected:
+                //           _viewModel.charactersState.levelFilter.value ==
+                //           LevelFilter.all,
+                //       onSelected: (_) => _viewModel.charactersState
+                //           .setLevelFilter(LevelFilter.all),
+                //       // onSelected: (_) {},
+                //       // onSelected: (_) =>
+                //       //     widget.viewModel.setLevelFilter(LevelFilter.all),
+                //     ),
+                //     FilterChip(
+                //       label: Text(
+                //         'Abaixo de 30',
+                //         style: TextStyle(
+                //           color: Theme.of(context).colorScheme.onSecondary,
+                //         ),
+                //       ),
+                //       // selected:
+                //       //     widget.viewModel.levelFilter.value ==
+                //       //     LevelFilter.below30,
+                //       // selected: false,
+                //       selected:
+                //           _viewModel.charactersState.levelFilter.value ==
+                //           LevelFilter.below30,
+                //       onSelected: (_) => _viewModel.charactersState
+                //           .setLevelFilter(LevelFilter.below30),
+                //       // onSelected: (_) {},
+                //       // onSelected: (_) => widget.viewModel.setLevelFilter(
+                //       //   LevelFilter.below30,
+                //     ),
+
+                //     FilterChip(
+                //       label: Text(
+                //         'Abaixo de 60',
+                //         style: TextStyle(
+                //           color: Theme.of(context).colorScheme.onSecondary,
+                //         ),
+                //       ),
+                //       // selected:
+                //       //     widget.viewModel.levelFilter.value ==
+                //       //     LevelFilter.below60,
+                //       // selected: false,
+                //       // onSelected: (_) {},
+                //       selected:
+                //           _viewModel.charactersState.levelFilter.value ==
+                //           LevelFilter.below60,
+                //       onSelected: (_) => _viewModel.charactersState
+                //           .setLevelFilter(LevelFilter.below60),
+                //       // onSelected: (_) => widget.viewModel.setLevelFilter(
+                //       //   LevelFilter.below60,
+                //     ),
+
+                //     FilterChip(
+                //       label: Text(
+                //         'Até 70',
+                //         style: TextStyle(
+                //           color: Theme.of(context).colorScheme.onSecondary,
+                //         ),
+                //       ),
+                //       // selected:
+                //       //     widget.viewModel.levelFilter.value ==
+                //       //     LevelFilter.upTo70,
+                //       // selected: false,
+                //       // onSelected: (_) {},
+                //       selected:
+                //           _viewModel.charactersState.levelFilter.value ==
+                //           LevelFilter.upTo70,
+                //       onSelected: (_) => _viewModel.charactersState
+                //           .setLevelFilter(LevelFilter.upTo70),
+                //       // onSelected: (_) => widget.viewModel.setLevelFilter(
+                //       //   LevelFilter.upTo70,
+                //       // ),
+                //     ),
+                //     FilterChip(
+                //       label: Text(
+                //         'Level 80',
+                //         style: TextStyle(
+                //           color: Theme.of(context).colorScheme.onSecondary,
+                //         ),
+                //       ),
+                //       // selected:
+                //       //     widget.viewModel.levelFilter.value ==
+                //       //     LevelFilter.max80,
+                //       // selected: false,
+                //       // onSelected: (_) {},
+                //       selected:
+                //           _viewModel.charactersState.levelFilter.value ==
+                //           LevelFilter.max80,
+                //       onSelected: (_) => _viewModel.charactersState
+                //           .setLevelFilter(LevelFilter.max80),
+                //       // onSelected: (_) => widget.viewModel.setLevelFilter(
+                //       //   LevelFilter.max80,
+                //       // ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
           ),
