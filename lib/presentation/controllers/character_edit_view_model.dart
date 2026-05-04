@@ -4,6 +4,8 @@ import '../../domain/facades/character_facade_usecases_interface.dart';
 import '../../domain/models/character_entity.dart';
 import '../commands/character_commands.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import '../../core/di/dependency_injection.dart'; // Import necessário para o injector
+import 'characters_view_model.dart';             // Import necessário para o CharactersViewModel
 
 class CharacterEditViewModel {
   final ICharacterFacadeUseCases _facade;
@@ -17,7 +19,7 @@ class CharacterEditViewModel {
   // Getter para o comando
   UpdateCharacterCommand get updateCharacterCommand => _updateCharacterCommand;
 
-  // Observador para o update (caso você precise reagir ao sucesso ou erro na tela de edição)
+  // Observador para o update
   void _observeUpdateCharacter() {
     effect(() {
       if (_updateCharacterCommand.isExecuting.value) return;
@@ -27,7 +29,19 @@ class CharacterEditViewModel {
 
       result.fold(
         onSuccess: (updatedCharacter) {
-          // Ações de sucesso caso precise (ex: atualizar estado local)
+          // Ação de sucesso: Atualiza a lista em memória no estado global
+          try {
+            final charactersViewModel = injector.get<CharactersViewModel>();
+            final currentList = charactersViewModel.charactersState.state.value;
+            final index = currentList.indexWhere((c) => c.id == updatedCharacter.id);
+
+            if (index != -1) {
+              final newList = List<Character>.from(currentList);
+              newList[index] = updatedCharacter;
+              charactersViewModel.charactersState.state.value = newList;
+            }
+          } catch (_) {}
+
           _updateCharacterCommand.clear();
         },
         onFailure: (err) {
