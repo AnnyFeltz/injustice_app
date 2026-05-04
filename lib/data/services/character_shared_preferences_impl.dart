@@ -14,9 +14,43 @@ final class CharacterSharedPreferencesService
   static const String _storageKey = 'characters';
 
   @override
-  Future<CharacterResult> deleteCharacter(String id) {
-    // TODO: implement deleteCharacter
-    throw UnimplementedError();
+  Future<CharacterResult> deleteCharacter(String id) async {
+    try {
+      final currentResult = await getAllCharacters();
+
+      return await currentResult.fold(
+        onSuccess: (characters) async {
+          // Busca o índice do personagem na lista
+          final characterIndex = characters.indexWhere((c) => c.id == id);
+          
+          if (characterIndex == -1) {
+            return Error(ApiLocalFailure('Personagem não encontrado'));
+          }
+
+          final characterToRemove = characters[characterIndex];
+          
+          // Cria uma nova lista removendo o item do índice
+          final updatedCharacters = List.of(characters)..removeAt(characterIndex);
+
+          // Atualiza o SharedPreferences
+          if (updatedCharacters.isEmpty) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove(_storageKey);
+          } else {
+            await _saveCharacters(updatedCharacters);
+          }
+
+          return Success(characterToRemove);
+        },
+        onFailure: (failure) async{
+          return Error(failure);
+        },
+      );
+    } catch (e) {
+      return Error(
+        ApiLocalFailure('Shared Preferences - Erro ao deletar personagem: $e'),
+      );
+    }
   }
 
   @override

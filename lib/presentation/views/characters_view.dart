@@ -44,13 +44,27 @@ class _CharactersViewState extends State<CharactersView> {
   super.didChangeDependencies();
  }
 
- Future<void> _deleteCharacter(Character character) async {
-  if (mounted) {
-   ScaffoldMessenger.of(
-    context,
-   ).showSnackBar(SnackBar(content: Text('${character.name} removido')));
+  Future<void> _deleteCharacter(Character character) async {
+    try {
+      // Executa a remoção do personagem
+      await _viewModel.commands.deleteCharacter(character);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${character.name} removido com sucesso!')),
+        );
+        
+        // Atualiza a lista após a exclusão
+        await _viewModel.commands.fetchCharacters();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao remover ${character.name}.')),
+        );
+      }
+    }
   }
- }
 
  @override
  Widget build(BuildContext context) {
@@ -283,7 +297,7 @@ class EmptyState extends StatelessWidget {
 /// Item da lista de personagens
 class CharacterListItem extends StatelessWidget {
  final Character character;
- final VoidCallback onDelete;
+ final Future<void> Function() onDelete;
  final VoidCallback onTap;
 
  const CharacterListItem({
@@ -342,7 +356,7 @@ class CharacterListItem extends StatelessWidget {
         ) ?? false;
 
         if (confirm) {
-         onDelete();
+         await onDelete();
         }
        },
        backgroundColor: Colors.red,

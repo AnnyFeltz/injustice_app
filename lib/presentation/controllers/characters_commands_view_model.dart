@@ -11,6 +11,8 @@ class CharactersCommandsViewModel {
   final CreateCharacterCommand _createCharacterCommand;
   final DeleteCharacterCommand _deleteCharacterCommand;
 
+  Character? _characterBeingDeleted;
+
   CharactersCommandsViewModel({
     required this.state,
     required GetAllCharactersCommand getAccountCommand,
@@ -97,14 +99,20 @@ class CharactersCommandsViewModel {
 
   /// Deleta um personagem
   void _observeDeleteCharacter() {
-    _observeCommand<Character>(
+    _observeCommand<void>(
       _deleteCharacterCommand,
-      onSuccess: (deletedCharacter) {
-        final currentList = state.state.value;
-        final newList = currentList.where((c) => c.id != deletedCharacter.id).toList();
-        state.state.value = newList; 
+      onSuccess: (_) {
+        if (_characterBeingDeleted != null) {
+          final currentList = state.state.value;
+          final newList = currentList.where((c) => c.id != _characterBeingDeleted!.id).toList();
+          state.state.value = newList; 
+          _characterBeingDeleted = null;
+        }
       },
-      onFailure: (err) => state.setMessage(err.msg),
+      onFailure: (err) {
+        state.setMessage(err.msg);
+        _characterBeingDeleted = null;
+      },
     );
   }
 
@@ -122,7 +130,9 @@ class CharactersCommandsViewModel {
   }
 
   Future<void> deleteCharacter(Character character) async {
-    state.clearMessage(); // Limpa mensagens anteriores
+    state.clearMessage();
+    _characterBeingDeleted = character; 
+
     await _deleteCharacterCommand.executeWith((id: character.id));
   }
 }

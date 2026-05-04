@@ -4,8 +4,8 @@ import '../../domain/facades/character_facade_usecases_interface.dart';
 import '../../domain/models/character_entity.dart';
 import '../commands/character_commands.dart';
 import 'package:signals_flutter/signals_flutter.dart';
-import '../../core/di/dependency_injection.dart'; // Import necessário para o injector
-import 'characters_view_model.dart';             // Import necessário para o CharactersViewModel
+import '../../core/di/dependency_injection.dart';
+import 'characters_view_model.dart';             
 
 class CharacterEditViewModel {
   final ICharacterFacadeUseCases _facade;
