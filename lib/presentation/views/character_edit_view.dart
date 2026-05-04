@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/di/dependency_injection.dart';
 import '../../domain/models/character_entity.dart';
 import '../../core/theme/app_theme.dart';
-import '../controllers/characters_view_model.dart';
+// Importe a nova ViewModel
+import '../controllers/character_edit_view_model.dart';
 
 class CharacterEditView extends StatefulWidget {
   final Character character;
@@ -15,13 +16,14 @@ class CharacterEditView extends StatefulWidget {
 
 class _CharacterEditViewState extends State<CharacterEditView> {
   late final TextEditingController _nameController;
-  late final CharactersViewModel _viewModel;
+  late final CharacterEditViewModel _viewModel; 
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.character.name);
-    _viewModel = injector.get<CharactersViewModel>();
+    // Busca a nova ViewModel no GetIt
+    _viewModel = injector.get<CharacterEditViewModel>(); 
   }
 
   @override
@@ -57,7 +59,7 @@ class _CharacterEditViewState extends State<CharacterEditView> {
                   name: updatedName,
                 );
 
-                await _viewModel.commands.updateCharacter(updatedCharacter);
+                await _viewModel.updateCharacter(updatedCharacter);
 
                 Navigator.pop(context, true); 
               },

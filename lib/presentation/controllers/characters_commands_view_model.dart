@@ -9,23 +9,19 @@ class CharactersCommandsViewModel {
   final CharactersStateViewmodel state;
   final GetAllCharactersCommand _getAccountCommand;
   final CreateCharacterCommand _createCharacterCommand;
-  final UpdateCharacterCommand _updateCharacterCommand; 
   final DeleteCharacterCommand _deleteCharacterCommand;
 
   CharactersCommandsViewModel({
     required this.state,
     required GetAllCharactersCommand getAccountCommand,
     required CreateCharacterCommand createCharacterCommand,
-    required UpdateCharacterCommand updateCharacterCommand, 
     required DeleteCharacterCommand deleteCharacterCommand,
   }) : _getAccountCommand = getAccountCommand,
        _createCharacterCommand = createCharacterCommand,
-       _updateCharacterCommand = updateCharacterCommand,
        _deleteCharacterCommand = deleteCharacterCommand { 
     // Observers para cada comando
     _observeGetAllCharacters();
     _observeCreateCharacter();
-    _observeUpdateCharacter();
     _observeDeleteCharacter(); 
   }
 
@@ -34,7 +30,6 @@ class CharactersCommandsViewModel {
   // ========================================================
   GetAllCharactersCommand get getAllCharactersCommand => _getAccountCommand;
   CreateCharacterCommand get createCharacterCommand => _createCharacterCommand;
-  UpdateCharacterCommand get updateCharacterCommand => _updateCharacterCommand;
   DeleteCharacterCommand get deleteCharacterCommand => _deleteCharacterCommand;
 
   // ========================================================
@@ -100,23 +95,6 @@ class CharactersCommandsViewModel {
     );
   }
 
-  /// Atualiza um personagem
-  void _observeUpdateCharacter() {  
-    _observeCommand<Character>(
-      _updateCharacterCommand,
-      onSuccess: (updatedCharacter) {
-        final currentList = state.state.value;
-        // Substitui o item antigo pelo atualizado
-        final newlist = currentList
-            .map((c) => c.id == updatedCharacter.id ? updatedCharacter : c)
-            .toList();
-        state.state.value = newlist; 
-      },
-      onFailure: (err) =>
-          state.setMessage(err.msg), // registra o erro no estado
-    );
-  }
-
   /// Deleta um personagem
   void _observeDeleteCharacter() {
     _observeCommand<Character>(
@@ -141,11 +119,6 @@ class CharactersCommandsViewModel {
   Future<void> addCharacter(Character character) async {
     state.clearMessage(); // Limpa mensagens anteriores
     await _createCharacterCommand.executeWith((character: character));
-  }
-
-  Future<void> updateCharacter(Character character) async {
-    state.clearMessage(); // Limpa mensagens anteriores
-    await _updateCharacterCommand.executeWith((character: character));
   }
 
   Future<void> deleteCharacter(Character character) async {

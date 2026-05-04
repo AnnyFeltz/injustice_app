@@ -18,6 +18,7 @@ import '../../domain/usecases/character_usecases_impl.dart';
 import '../../domain/usecases/character_usecases_interfaces.dart';
 import '../../presentation/controllers/account_viewmodel.dart';
 import '../../presentation/controllers/characters_view_model.dart';
+import '../../presentation/controllers/character_edit_view_model.dart';
 import '../theme/theme_controller.dart';
 
 final injector = AutoInjector();
@@ -54,6 +55,8 @@ void setupDependencyInjection() {
   injector.addSingleton<AccountViewModel>(AccountViewModel.new);
   // Character List viewmodel
   injector.addSingleton<CharactersViewModel>(CharactersViewModel.new);
+  // Character Edit viewmodel
+  injector.addSingleton<CharacterEditViewModel>(CharacterEditViewModel.new);
 
   injector.commit();
 }

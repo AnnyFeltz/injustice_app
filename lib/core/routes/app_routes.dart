@@ -61,7 +61,7 @@ class AppRouter {
         path: AppPaths.editCharacter,
         name: AppRouteNames.editCharacter,
         pageBuilder: (context, state) {
-          final id = state.pathParameters['id']!; // Captura o ID da URL
+          final id = state.pathParameters['id']!; 
           return NoTransitionPage(
             child: Scaffold(
               appBar: AppBar(title: const Text('Editando')),
